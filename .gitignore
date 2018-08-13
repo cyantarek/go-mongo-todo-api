@@ -61,4 +61,8 @@ fabric.properties
 # Editor-based Rest Client
 .idea/httpRequests
 
-/src/crud-api
+/bin/crud-api
+.idea/inspectionProfiles/
+bin/
+run.sh
+Dockerfile
