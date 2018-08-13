@@ -11,10 +11,9 @@ var Coll *mgo.Collection
 
 func Connect() {
 	godotenv.Load()
-	if addr := os.Getenv("MONGO_ADDRESS"); addr =="" {
+	if addr := os.Getenv("MONGO_ADDRESS"); addr == "" {
 		os.Setenv("MONGO_ADDRESS", "localhost:27017")
 	}
-	log.Println(os.Getenv("MONGO_ADDRESS"))
 	session, err := mgo.Dial(os.Getenv("MONGO_ADDRESS"))
 
 	if err != nil {

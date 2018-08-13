@@ -8,6 +8,7 @@ import (
 	"gopkg.in/mgo.v2/bson"
 	"time"
 	"github.com/gorilla/mux"
+	"log"
 )
 
 func GetAllTodos(w http.ResponseWriter, r *http.Request) {
@@ -26,10 +27,12 @@ func GetATodo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var todo models.Todo
-	err2 := db.Coll.FindId(bson.ObjectIdHex(vars["id"])).One(&todo)
+	err := db.Coll.FindId(bson.ObjectIdHex(vars["id"])).One(&todo)
 
-	if err2 != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+	if err != nil {
+		log.Println(err)
+		w.WriteHeader(http.StatusNotFound)
+		json.NewEncoder(w).Encode(map[string]string{"msg": "not found"})
 		return
 	}
 	w.WriteHeader(http.StatusOK)
@@ -46,6 +49,7 @@ func CreateATodo(w http.ResponseWriter, r *http.Request) {
 	err := db.Coll.Insert(todo)
 
 	if err != nil {
+		log.Println(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -68,16 +72,22 @@ func UpdateATodo(w http.ResponseWriter, r *http.Request) {
 	json.NewDecoder(r.Body).Decode(&updatedTodo)
 	updatedTodo.UpdatedAt = time.Now()
 
-	err2 := db.Coll.FindId(bson.ObjectIdHex(vars["id"])).One(&originalTodo)
+	err := db.Coll.FindId(bson.ObjectIdHex(vars["id"])).One(&originalTodo)
 
-	if err2 != nil {
+	if err != nil {
+		log.Println(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 	updatedTodo.ID = originalTodo.ID
 	updatedTodo.CreatedAt = originalTodo.CreatedAt
 
-	db.Coll.UpdateId(originalTodo.ID, &updatedTodo)
+	err = db.Coll.UpdateId(originalTodo.ID, &updatedTodo)
+	if err != nil {
+		log.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]string{"msg": "updated successfully"})
@@ -90,7 +100,12 @@ func DeleteATodo(w http.ResponseWriter, r *http.Request) {
 	if !check {
 		return
 	}
-	db.Coll.RemoveId(vars["id"])
+	err := db.Coll.RemoveId(bson.ObjectIdHex(vars["id"]))
+	if err != nil {
+		log.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(map[string]string{"msg": "deleted successfully"})
 }
